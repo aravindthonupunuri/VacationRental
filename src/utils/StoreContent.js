@@ -11,9 +11,25 @@ function MakeStorageClient() {
 }
 
 export const StoreContent = async (files) => {
+  // console.log("Uploading files to IPFS with web3.storage....");
+  // const client = MakeStorageClient();
+  // const cid = await client.put([files]);
+  // console.log("Stored files with cid:", cid);
+  // return cid;
+
   console.log("Uploading files to IPFS with web3.storage....");
   const client = MakeStorageClient();
-  const cid = await client.put([files]);
-  console.log("Stored files with cid:", cid);
-  return cid;
+  if (!client) {
+    console.log("Error: failed to initialize storage client");
+    return null;
+  }
+
+  try {
+    const cid = await client.put([files]);
+    console.log("Stored files with cid:", cid);
+    return cid;
+  } catch (err) {
+    console.log("Error storing files:", err);
+    return null;
+  }
 };
