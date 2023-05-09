@@ -23,6 +23,7 @@
   border-top: 1px solid rgb(53, 49, 49);
   margin-bottom: 0px;
 }
+
 .RentalsContent {
   width: 100%;
   display: flex;
@@ -151,4 +152,21 @@
   .hide {
     display: none;
   }
+}
+.filter-description {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.filter-title {
+  margin-right: 16px;
+}
+
+.filter-value {
+  font-weight: normal;
+  color: #555;
 }

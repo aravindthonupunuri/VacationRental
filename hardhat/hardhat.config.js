@@ -46,7 +46,7 @@ module.exports = {
       accounts: [process.env.PRIVATE_KEY_GANACHE],
     },
     sepolia: {
-      url: "https://eth-sepolia.g.alchemy.com/v2/h2Vq__2XfhK3CA1qAEm_xFNFsfWuwm1-",
+      url: "https://eth-sepolia.g.alchemy.com/v2/jCwb5_aYwTHcZkiy34r_vHkkaLM8ksDW",
       chainId: 11155111,
       accounts: [process.env.PRIVATE_KEY_SEPOLIA],
     }

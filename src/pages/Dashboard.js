@@ -33,7 +33,7 @@ const Dashboard = () => {
       user_properties.map(async (r) => {
         const imgUrl = r[7].replace(
           "ipfs://",
-          "https://gateway.pinata.cloud/ipfs/"
+          "https://ipfs.io/ipfs/"
         );
 
         return {
@@ -56,7 +56,7 @@ const Dashboard = () => {
 
         const imgUrl = r[7].replace(
           "ipfs://",
-          "https://gateway.pinata.cloud/ipfs/"
+          "https://ipfs.io/ipfs/"
         );
 
         let myBookings = _rentalBookings.filter((b) => b[0] == data.account);

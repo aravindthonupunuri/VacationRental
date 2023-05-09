@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import * as React from "react";
 import "../assets/css/Rentals.css";
 import logo from "../assets/images/rentalLogo.png";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,7 +13,7 @@ import Connect from "../components/Connect";
 import DecentralAirbnb from "../artifacts/DecentralAirbnb.sol/DecentralAirbnb.json";
 import { contractAddress, networkDeployedTo } from "../utils/contracts-config";
 import networksMap from "../utils/networksMap.json";
-
+import { Slider } from "@mui/material";
 const Rentals = () => {
   let navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -22,6 +23,7 @@ const Rentals = () => {
   const [highLight, setHighLight] = useState();
   const [rentalsList, setRentalsList] = useState([]);
   const [coordinates, setCoordinates] = useState([]);
+  const [dynamicRental, setdynamicRental] = useState([]);
 
   const getRentalsList = async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
@@ -35,10 +37,7 @@ const Rentals = () => {
     const rentals = await AirbnbContract.getRentals();
 
     const items = rentals.map((r) => {
-      const imgUrl = r[7].replace(
-        "ipfs://",
-        "https://gateway.pinata.cloud/ipfs/"
-      );
+      const imgUrl = r[7].replace("ipfs://", "https://ipfs.io/ipfs/");
       return {
         id: Number(r[0]),
         name: r[2],
@@ -52,7 +51,9 @@ const Rentals = () => {
     const matchedItems = items.filter((p) =>
       p.city.toLowerCase().includes(searchFilters.destination.toLowerCase())
     );
+    setdynamicRental(matchedItems);
 
+    console.log(matchedItems)
     setRentalsList(matchedItems);
 
     let cords = rentals.map((r) => {
@@ -65,57 +66,79 @@ const Rentals = () => {
     setCoordinates(cords);
   };
 
-  const bookProperty = async (_id, _price) => {
-    if (data.network == networksMap[networkDeployedTo]) {
-      try {
-        setLoading(true);
-        const provider = new ethers.providers.Web3Provider(
-          window.ethereum,
-          "any"
-        );
-        const signer = provider.getSigner();
-        const AirbnbContract = new ethers.Contract(
-          contractAddress,
-          DecentralAirbnb.abi,
-          signer
-        );
+  // const bookProperty = async (_id, _price) => {
+  //   if (data.network == networksMap[networkDeployedTo]) {
+  //     try {
+  //       setLoading(true);
+  //       const provider = new ethers.providers.Web3Provider(
+  //         window.ethereum,
+  //         "any"
+  //       );
+  //       const signer = provider.getSigner();
+  //       const AirbnbContract = new ethers.Contract(
+  //         contractAddress,
+  //         DecentralAirbnb.abi,
+  //         signer
+  //       );
 
-        const _datefrom = Math.floor(searchFilters.checkIn.getTime() / 1000);
-        const _dateto = Math.floor(searchFilters.checkOut.getTime() / 1000);
+  //       const _datefrom = Math.floor(searchFilters.checkIn.getTime() / 1000);
+  //       const _dateto = Math.floor(searchFilters.checkOut.getTime() / 1000);
 
-        const dayToSeconds = 86400;
-        const bookPeriod = (_dateto - _datefrom) / dayToSeconds;
-        const totalBookingPriceUSD = Number(_price) * bookPeriod;
-        const totalBookingPriceETH = await AirbnbContract.convertFromUSD(
-          utils.parseEther(totalBookingPriceUSD.toString(), "ether")
-        );
+  //       const dayToSeconds = 86400;
+  //       const bookPeriod = (_dateto - _datefrom) / dayToSeconds;
+  //       const totalBookingPriceUSD = Number(_price) * bookPeriod;
+  //       const totalBookingPriceETH = await AirbnbContract.convertFromUSD(
+  //         utils.parseEther(totalBookingPriceUSD.toString(), "ether")
+  //       );
 
-        const book_tx = await AirbnbContract.bookDates(
-          _id,
-          _datefrom,
-          _dateto,
-          { value: totalBookingPriceETH }
-        );
-        await book_tx.wait();
+  //       console.log(_id);
+  //       console.log(_datefrom);
+  //       console.log(_dateto);
+  //       console.log(totalBookingPriceETH);
+        
 
-        setLoading(false);
-        navigate("/dashboard");
-      } catch (err) {
-        setLoading(false);
-        window.alert("An error has occured, please try again");
-      }
-    } else {
-      setLoading(false);
-      window.alert(
-        `Please Switch to the ${networksMap[networkDeployedTo]} network`
-      );
-    }
-  };
+  //       const book_tx = await AirbnbContract.bookDates(
+  //         _id,
+  //         _datefrom,
+  //         _dateto,
+  //         { value: totalBookingPriceETH }
+  //       );
+  //       await book_tx.wait();
+
+  //       setLoading(false);
+  //       navigate("/dashboard");
+  //     } catch (err) {
+  //       setLoading(false);
+  //       window.alert("An error has occured, please try again");
+  //     }
+  //   } else {
+  //     setLoading(false);
+  //     window.alert(
+  //       `Please Switch to the ${networksMap[networkDeployedTo]} network`
+  //     );
+  //   }
+  // };
 
   useEffect(() => {
     getRentalsList();
   }, []);
 
+  const [value, setValue] = React.useState([0, 300]);
+
+  const updateHotels = (value) => {
+    const newHotels = dynamicRental.filter(
+      (hotel) => hotel.price >= value[0] && hotel.price <= value[1]
+    );
+    setRentalsList(newHotels);
+  };
+  const handleChange = (event, newValue) => {
+    setValue(newValue);
+    updateHotels(newValue);
+  }; //filter the required hotels based on price range
+
+  function valuetext(value) {
+    return `${value}°C`;
+  }
   return (
     <>
       <div className="topBanner">
@@ -150,6 +173,45 @@ const Rentals = () => {
       <div className="RentalsContent">
         <div className="RentalsContent-box">
           Stays Available For Your Destination
+          <div style={{ marginTop: "10px" }} className="filter-description">
+            <span className="filter-title">Filter by Price:</span>
+            <span className="filter-value">
+              {value[0]} - {value[1]}$
+            </span>
+          </div>
+          <Slider
+            max={200}
+            getAriaLabel={() => "Price range"}
+            value={value}
+            onChange={handleChange}
+            valueLabelDisplay="auto"
+            getAriaValueText={valuetext}
+            sx={{
+              color: "primary.main",
+              marginBottom: "20px",
+              "& .MuiSlider-valueLabel": {
+                backgroundColor: "primary.main",
+                color: "white",
+                borderRadius: "4px",
+                padding: "4px 8px",
+              },
+              "& .MuiSlider-track": {
+                backgroundColor: "primary.main",
+              },
+              "& .MuiSlider-rail": {
+                backgroundColor: "grey.300",
+              },
+              "& .MuiSlider-thumb": {
+                backgroundColor: "primary.main",
+                "&:hover": {
+                  boxShadow: "0px 0px 0px 8px rgba(0,0,0,0.1)",
+                },
+                "&.Mui-active": {
+                  boxShadow: "0px 0px 0px 14px rgba(0,0,0,0.1)",
+                },
+              },
+            }}
+          />
           <hr className="line2" />
           {rentalsList.length !== 0 ? (
             rentalsList.map((e, i) => {
@@ -162,7 +224,7 @@ const Rentals = () => {
                       <div className="rental-desc">in {e.city}</div>
                       <div className="rental-desc">{e.description}</div>
                       <div className="bottomButton">
-                        <Button
+                          {/* <Button
                           variant="contained"
                           color="error"
                           onClick={() => {
@@ -174,7 +236,22 @@ const Rentals = () => {
                           ) : (
                             "Book"
                           )}
-                        </Button>
+                        </Button>   */}
+                        <Link
+                            to={"/bookingPage"}
+                            state={{
+                              id:e.id,
+                              price: e.price,
+                              name: e.name,
+                              city:e.city,
+                              image:e.imgUrl,
+                              description:e.description,
+                              destination: searchFilters.destination,
+                              checkIn: searchFilters.checkIn,
+                              checkOut: searchFilters.checkOut,
+                              guests: searchFilters.guests,
+                            }}
+                          >Proceed</Link> 
                         <div className="price">{e.price}$</div>
                       </div>
                     </div>
@@ -198,3 +275,5 @@ const Rentals = () => {
 };
 
 export default Rentals;
+
+
