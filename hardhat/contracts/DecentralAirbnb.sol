@@ -12,6 +12,7 @@ contract DecentralAirbnb is PriceConverter {
 
     uint256 public listingFee;
     uint256 private _rentalIds;
+    uint256 private _reviewIds;
 
     struct RentalInfo {
         uint256 id;
@@ -32,9 +33,18 @@ contract DecentralAirbnb is PriceConverter {
         uint256 toTimestamp;
     }
 
+    struct ReviewInfo {
+        uint256 reviewId;
+        address com_owner;
+        string review;
+        uint256 rating;
+    }
+
     RentalInfo[] public rentals;
 
     mapping(uint256 => Booking[]) rentalBookings;
+
+    mapping(uint256 => ReviewInfo[]) Reviews;
 
     //--------------------------------------------------------------------
     // EVENTS
@@ -61,12 +71,22 @@ contract DecentralAirbnb is PriceConverter {
         uint256 timestamp
     );
 
+    event NewReviewAdded(
+        uint256 reviewId,
+        uint256 rentalId,
+        address com_owner,
+        string review,
+        uint256 rating,
+        uint256 timestamp
+    );
+
     //--------------------------------------------------------------------
     // ERRORS
 
     error DecentralAirbnb__OnlyAdmin();
     error DecentralAirbnb__InvalidFee();
     error DecentralAirbnb__InvalidRentalId();
+    error DecentralAirbnb__InvalidReviewId();
     error DecentralAirbnb__InvalidBookingPeriod();
     error DecentralAirbnb__AlreadyBooked();
     error DecentralAirbnb__InsufficientAmount();
@@ -84,6 +104,12 @@ contract DecentralAirbnb is PriceConverter {
         if(_id >= _rentalIds) revert DecentralAirbnb__InvalidRentalId();
         _;
     }
+
+    modifier isReview(uint _id) {
+        if(_id >= _reviewIds) revert DecentralAirbnb__InvalidReviewId();
+        _;
+    }
+
 
     //--------------------------------------------------------------------
     // CONSTRUCTOR
@@ -137,6 +163,30 @@ contract DecentralAirbnb is PriceConverter {
             _imgUrl,
             _maxGuests,
             _pricePerDay,
+            block.timestamp
+        );
+    }
+
+    function addReview(
+       uint256 rentalId,
+        string memory review,
+        uint256 rating
+    ) external {
+        
+        uint256 reviewId = _reviewIds;
+
+        Reviews[rentalId].push(
+            ReviewInfo(reviewId,msg.sender, review, rating)
+        );
+
+        _reviewIds++;
+
+        emit NewReviewAdded(
+            reviewId,
+           rentalId,
+           msg.sender,
+           review,
+            rating,
             block.timestamp
         );
     }
@@ -221,6 +271,15 @@ contract DecentralAirbnb is PriceConverter {
         returns (RentalInfo memory)
     {
         return rentals[_id];
+    }
+
+    function getReviews(uint256 _id)
+        external
+        view
+        isReview(_id)
+        returns (ReviewInfo[] memory)
+    {
+        return Reviews[_id];
     }
 
     // ADMIN FUNCTIONS

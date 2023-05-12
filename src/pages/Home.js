@@ -31,7 +31,7 @@ const Home = () => {
               <div className="banner-title text-center">
                 <h1>Find the best location for your trip</h1>
                 <p className="opacity-full">
-                  the decentralized version of Airbnb offers you the best
+                  Holiday offers you the best
                   traveling opportunity
                 </p>
               </div>

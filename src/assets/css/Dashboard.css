@@ -5,13 +5,17 @@
 
 .rentalsContent {
   width: 100%;
-  padding-top: 80px;
+  padding-top: 20px;
   display: flex;
   justify-content: start;
   height: calc(100vh - 135px);
 }
 
 .rentalsContent-box {
+  width: 50%;
+}
+
+/* .rentalsContent-box {
   width: 50%;
   padding-top: 80px;
   padding: 30px;
@@ -21,7 +25,17 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-}
+} */
+
+
+    .proplist{
+      height: 90%;
+      padding: 30px;
+      overflow-y: scroll;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
 ..rental-div {
   display: flex;
@@ -82,3 +96,5 @@
     padding-top: 180px;
   }
 }
+
+

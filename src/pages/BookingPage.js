@@ -7,7 +7,7 @@ import { useSelector } from "react-redux";
 import { ethers, utils } from "ethers";
 import { useLocation } from "react-router";
 import RentalsMap from "../components/RentalsMap";
-import { Button, CircularProgress, Typography, Rating } from "@mui/material";
+import { Button, CircularProgress, Typography, Rating,TextField } from "@mui/material";
 import Connect from "../components/Connect";
 
 import DecentralAirbnb from "../artifacts/DecentralAirbnb.sol/DecentralAirbnb.json";
@@ -20,18 +20,19 @@ const BookingPage = () => {
   const data = useSelector((state) => state.blockchain.value);
   const { state: rentaldata } = useLocation();
   const [loading, setLoading] = useState(false);
+  const [loading1, setLoading1] = useState(false);
 
 
 
+  const [reviews, setReviews] = useState([]);
 
-  const [reviews, setReviews] = useState([
-    { id: 1, user: 'John', comment: 'Great place to stay!', rating: 4.5 },
-    { id: 2, user: 'Jane', comment: 'Had a wonderful time here', rating: 5 },
-    { id: 3, user: 'Joe', comment: 'Very clean and comfortable', rating: 4 },
-    { id: 4, user: 'Jenny', comment: 'The view is amazing!', rating: 5 },
-    { id: 5, user: 'Jim', comment: 'Highly recommended!', rating: 4.5 },
-    { id: 6, user: 'Jessica', comment: 'Will definitely come back', rating: 5 },
-  ]);
+  const [newReview, setNewReview] = useState({
+    user: data.account,
+    comment: '',
+    rating: 0,
+  });
+
+  
 
   const datefrom = Math.floor(rentaldata.checkIn.getTime() / 1000);
   const dateto = Math.floor(rentaldata.checkOut.getTime() / 1000);
@@ -40,6 +41,7 @@ const BookingPage = () => {
   const bookPeriod = ((dateto - datefrom) / dayToSeconds);
   const totalBookingPriceUSD = Number(rentaldata.price) * (bookPeriod);
   console.log(rentaldata.image);
+
   const bookProperty = async () => {
     if (data.network == networksMap[networkDeployedTo]) {
       console.log("aaa0")
@@ -92,7 +94,36 @@ const BookingPage = () => {
 
 
 
+  const getReviewList = async () => {
+    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+    const signer = provider.getSigner();
+    const AirbnbContract = new ethers.Contract(
+      contractAddress,
+      DecentralAirbnb.abi,
+      signer
+    );
 
+    const rev = await AirbnbContract.getReviews(rentaldata.id);
+    console.log(data.account)
+
+    const items = await Promise.all(
+      rev.map(async (r) => {
+  
+        return {
+          id: r[0],
+          user: r[1],
+          comment: r[2],
+          rating: Number(r[3])
+        };
+      })
+    );
+    setReviews(items);
+
+  };
+
+  useEffect(() => {
+    getReviewList();
+  }, [data.account]);
 
 
   return (
@@ -123,10 +154,10 @@ const BookingPage = () => {
               </div>
             </div>
             <div className="reviews">
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h5" gutterBottom>
                 Reviews
               </Typography>
-              <div className="reviews-list">
+              <div className="reviews-list" style={{ height: "250px", overflowY: "scroll", border: '1px solid black', padding: "4px", marginBottom:"10px"}}>
                 {reviews.map((review) => (
                   <div key={review.id} className="review">
                     <Typography variant="subtitle1" gutterBottom>
@@ -137,11 +168,12 @@ const BookingPage = () => {
                     </Typography>
                     <Typography variant="subtitle2" gutterBottom>
                       <span>Rating:</span>
-                      <Rating name="read-only" value={review.rating} precision={0.5} readOnly />
+                      <Rating name="read-only" value={review.rating} precision={1} readOnly />
                     </Typography>
                   </div>
                 ))}
               </div>
+           
             </div>
           </div>
         </div>

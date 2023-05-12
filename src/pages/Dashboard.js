@@ -6,15 +6,145 @@ import { ethers, utils } from "ethers";
 import logo from "../assets/images/rentalLogo.png";
 import { useSelector } from "react-redux";
 import Connect from "../components/Connect";
+import ExampleModal from "../components/ExampleModel";
 
+
+import { Container, Button, Grid } from "@mui/material";
 import DecentralAirbnb from "../artifacts/DecentralAirbnb.sol/DecentralAirbnb.json";
-import { contractAddress } from "../utils/contracts-config";
+import { contractAddress, networkDeployedTo } from "../utils/contracts-config";
+import networksMap from "../utils/networksMap.json";
+
 
 const Dashboard = () => {
   const data = useSelector((state) => state.blockchain.value);
 
   const [rentalsList, setRentalsList] = useState([]);
   const [propertiesList, setPropertiesList] = useState([]);
+  
+  const [openModal, setOpenModal] = useState(false);
+  const [cur_id, setcur_id] = useState(0);
+
+  const [loading1, setLoading1] = useState(false);
+
+
+
+  const [reviews, setReviews] = useState([]);
+
+  const [newReview, setNewReview] = useState({
+    user: data.account,
+    comment: '',
+    rating: 0,
+  });
+
+
+  
+
+  async function handleOpen (_id) {
+    console.log('inside this function')
+    setcur_id(_id);
+    console.log(_id)
+    console.log(cur_id)
+    await getReviewList(_id)
+    setOpenModal(true);
+  };
+
+  const handleClose = () => {
+    setOpenModal(false);
+  };
+
+
+  const handleReviewChange = (event) => {
+    const { name, value } = event.target;
+    setNewReview((prevReview) => ({ ...prevReview, [name]: value }));
+  };
+
+  const handleRatingChange = (event, value) => {
+    setNewReview((prevReview) => ({ ...prevReview, rating: value }));
+  };
+
+  const handleAddReview = async () => {
+
+    try {
+      const id = reviews.length + 1;
+      const updatedReviews = [...reviews, { ...newReview, id }];
+      await addReviewAndRating();
+      setReviews(updatedReviews);
+    } catch (e) {
+      console.log(e)
+    }
+    setNewReview({ user: data.account, comment: '', rating: 0 });
+  };
+
+  const addReviewAndRating = async () => {
+    if (data.network == networksMap[networkDeployedTo]) {
+      console.log("addReviewAndRating")
+      try {
+        setLoading1(true);
+        const provider = new ethers.providers.Web3Provider(
+          window.ethereum,
+          "any"
+        );
+        const signer = provider.getSigner();
+        const AirbnbContract = new ethers.Contract(
+          contractAddress,
+          DecentralAirbnb.abi,
+          signer
+        );
+       
+        const add_review_tx = await AirbnbContract.addReview(
+          cur_id,
+          newReview.comment,
+          newReview.rating
+        );
+        
+        await add_review_tx.wait();
+       
+        setLoading1(false);
+      } catch (err) {
+        setLoading1(false);
+        console.log(err);
+        window.alert("An error has occured, please try again");
+      }
+    } else {
+      setLoading1(false);
+      window.alert(
+        `Please Switch to the ${networksMap[networkDeployedTo]} network`
+      );
+    }
+  };
+
+
+  const getReviewList = async (_id) => {
+    console.log("getReviewList")
+    console.log(_id)
+
+    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+   
+    const signer = provider.getSigner();
+    
+    const AirbnbContract = new ethers.Contract(
+      contractAddress,
+      DecentralAirbnb.abi,
+      signer
+    );
+    
+    const rev = await AirbnbContract.getReviews(_id);
+    
+    const items = await Promise.all(
+      rev.map(async (r) => {
+
+        return {
+          id: r[0],
+          user: r[1],
+          comment: r[2],
+          rating: Number(r[3])
+        };
+      })
+    );
+    setReviews(items);
+
+  };
+
 
   const getRentalsList = async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
@@ -90,7 +220,13 @@ const Dashboard = () => {
             <img className="logo" src={logo} alt="logo"></img>
           </Link>
         </div>
-        <div className="lrContainers">
+       
+        <div className="lrContainers" style={{ width: "400px" }}>
+        <div style={{ marginRight: "20px" }}>
+            <a className="btn" href={"/add-rental"} style={{ backgroundColor: "#6161cd", color: "white" }} role="button">
+              Add rental
+            </a>
+          </div>
           <Connect />
         </div>
       </div>
@@ -99,7 +235,8 @@ const Dashboard = () => {
       <div className="rentalsContent">
         <div className="rentalsContent-box">
           <h3 className="title">Your properties</h3>
-          <hr className="line2" />
+          
+          <div className="proplist">
           {propertiesList.length !== 0 ? (
             propertiesList.map((e, i) => {
               return (
@@ -112,10 +249,10 @@ const Dashboard = () => {
                       <div className="rental-desc">{e.description}</div>
                       <br />
                       <br />
-                      <div className="price">{e.price}$</div>
+                      <div className="price">{e.price}$/day</div>
                     </div>
                   </div>
-                  <hr className="line2" />
+                   <hr className="line2" /> 
                 </>
               );
             })
@@ -124,15 +261,24 @@ const Dashboard = () => {
               <p>You have no properties listed</p>
             </div>
           )}
-          <div style={{ textAlign: "center", paddingTop: "35px" }}>
-            <a className="btn btn-danger" href={"/add-rental"} role="button">
-              Add rental
-            </a>
           </div>
         </div>
         <div className="rentalsContent-box">
+          {openModal ?
+            (<ExampleModal
+              reviews={reviews}
+              handleClose={handleClose}
+              handleAddReview={handleAddReview}
+              handleRatingChange={handleRatingChange}
+              handleReviewChange={handleReviewChange}
+              newReview={newReview}
+              loading1={loading1}
+              open={openModal}
+            />) : ''
+          }
           <h3 className="title">Your rentals</h3>
-          <hr className="line2" />
+          
+          <div className="proplist">
           {rentalsList.length !== 0 ? (
             rentalsList.map((e, i) => {
               return (
@@ -156,9 +302,11 @@ const Dashboard = () => {
                       </div>
                       <br />
                       <br />
-                      <div className="price">{e.price}$</div>
+                      <div className="price">{e.price}$/day</div>
+                      <Button variant="contained" sx={{ fontSize: '10px', padding: '3px 10px' }} onClick={() => handleOpen(e.id)}>Reviews</Button>
                     </div>
                   </div>
+                  <hr className="line2" /> 
                 </>
               );
             })
@@ -167,6 +315,7 @@ const Dashboard = () => {
               <p>You have no reservation yet</p>
             </div>
           )}
+          </div>
         </div>
       </div>
     </>

@@ -19,17 +19,18 @@
     margin-top: 2rem;
   }
   
-  .reviews-list {
+  /* .reviews-list {
     display: flex;
     flex-wrap: wrap;
     gap: 2rem;
-  }
+  } */
   
   .review {
     flex-basis: calc(50% - 1rem);
     padding: 1rem;
     border: 1px solid #ccc;
     border-radius: 4px;
+    margin-bottom: 5px;
   }
   
   .cost-details {
