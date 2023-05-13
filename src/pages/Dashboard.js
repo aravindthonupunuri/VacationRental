@@ -127,10 +127,13 @@ const Dashboard = () => {
       DecentralAirbnb.abi,
       signer
     );
-    
+    console.log("1")
+    var items=[];
+    try{
     const rev = await AirbnbContract.getReviews(_id);
-    
-    const items = await Promise.all(
+    console.log("2")
+    console.log(rev)
+    items = await Promise.all(
       rev.map(async (r) => {
 
         return {
@@ -141,6 +144,9 @@ const Dashboard = () => {
         };
       })
     );
+    }catch(e){
+      console.log(e);
+    }
     setReviews(items);
 
   };
