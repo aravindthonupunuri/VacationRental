@@ -96,5 +96,10 @@
     padding-top: 180px;
   }
 }
+.custom-header{
+  background-color: #f0f0f0; 
+  color: #333; 
+  font-weight: bold; 
+}
 
 

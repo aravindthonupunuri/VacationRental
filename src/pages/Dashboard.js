@@ -7,6 +7,7 @@ import logo from "../assets/images/rentalLogo.png";
 import { useSelector } from "react-redux";
 import Connect from "../components/Connect";
 import ExampleModal from "../components/ExampleModel";
+import BookingsModal from "../components/BookingsModal";
 
 
 import { Container, Button, Grid } from "@mui/material";
@@ -20,15 +21,19 @@ const Dashboard = () => {
 
   const [rentalsList, setRentalsList] = useState([]);
   const [propertiesList, setPropertiesList] = useState([]);
-  
+
   const [openModal, setOpenModal] = useState(false);
   const [cur_id, setcur_id] = useState(0);
 
   const [loading1, setLoading1] = useState(false);
 
+  const [addview, setaddview] = useState(false);
 
 
   const [reviews, setReviews] = useState([]);
+
+  const [bookings, setBookings] = useState([]);
+  const [openBookingsModal, setOpenBookingsModal] = useState(false);
 
   const [newReview, setNewReview] = useState({
     user: data.account,
@@ -36,15 +41,69 @@ const Dashboard = () => {
     rating: 0,
   });
 
+  async function handleOpenBooking(_id) {
+    await getBookingsList(_id);
+    setOpenBookingsModal(true);
+  };
 
-  
+  const handleCloseBooking = () => {
+    setOpenBookingsModal(false);
+  };
 
-  async function handleOpen (_id) {
+  const getBookingsList = async (_id) => {
+    console.log("getBookingsList")
+    console.log(_id)
+
+    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+
+    const signer = provider.getSigner();
+
+    const AirbnbContract = new ethers.Contract(
+      contractAddress,
+      DecentralAirbnb.abi,
+      signer
+    );
+    console.log("1")
+    var items = [];
+    try {
+      const rev = await AirbnbContract.getRentalBookings(_id);
+      console.log("2")
+      console.log(rev)
+      items = await Promise.all(
+        rev.map(async (r) => {
+
+          return {
+            tenent: r[0],
+            fromTimestamp:new Date(Number(r[1]) * 1000).toLocaleDateString(),
+            toTimestamp: new Date(Number(r[2]) * 1000).toLocaleDateString(),
+          };
+        })
+      );
+    } catch (e) {
+      console.log(e);
+    }
+    console.log(items)
+    setBookings(items);
+
+  };
+ 
+  async function handleOpen(_id) {
     console.log('inside this function')
     setcur_id(_id);
     console.log(_id)
     console.log(cur_id)
     await getReviewList(_id)
+    setaddview(true);
+    setOpenModal(true);
+  };
+
+  async function handleOpen1(_id) {
+    console.log('inside this function')
+    setcur_id(_id);
+    console.log(_id)
+    console.log(cur_id)
+    await getReviewList(_id)
+    setaddview(false);
     setOpenModal(true);
   };
 
@@ -90,15 +149,15 @@ const Dashboard = () => {
           DecentralAirbnb.abi,
           signer
         );
-       
+
         const add_review_tx = await AirbnbContract.addReview(
           cur_id,
           newReview.comment,
           newReview.rating
         );
-        
+
         await add_review_tx.wait();
-       
+
         setLoading1(false);
       } catch (err) {
         setLoading1(false);
@@ -119,32 +178,32 @@ const Dashboard = () => {
     console.log(_id)
 
     const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-   
+
     const signer = provider.getSigner();
-    
+
     const AirbnbContract = new ethers.Contract(
       contractAddress,
       DecentralAirbnb.abi,
       signer
     );
     console.log("1")
-    var items=[];
-    try{
-    const rev = await AirbnbContract.getReviews(_id);
-    console.log("2")
-    console.log(rev)
-    items = await Promise.all(
-      rev.map(async (r) => {
+    var items = [];
+    try {
+      const rev = await AirbnbContract.getReviews(_id);
+      console.log("2")
+      console.log(rev)
+      items = await Promise.all(
+        rev.map(async (r) => {
 
-        return {
-          id: r[0],
-          user: r[1],
-          comment: r[2],
-          rating: Number(r[3])
-        };
-      })
-    );
-    }catch(e){
+          return {
+            id: r[0],
+            user: r[1],
+            comment: r[2],
+            rating: Number(r[3])
+          };
+        })
+      );
+    } catch (e) {
       console.log(e);
     }
     setReviews(items);
@@ -173,6 +232,7 @@ const Dashboard = () => {
         );
 
         return {
+          id: r[0],
           name: r[2],
           city: r[3],
           description: r[6],
@@ -226,9 +286,9 @@ const Dashboard = () => {
             <img className="logo" src={logo} alt="logo"></img>
           </Link>
         </div>
-       
+
         <div className="lrContainers" style={{ width: "400px" }}>
-        <div style={{ marginRight: "20px" }}>
+          <div style={{ marginRight: "20px" }}>
             <a className="btn" href={"/add-rental"} style={{ backgroundColor: "#6161cd", color: "white" }} role="button">
               Add rental
             </a>
@@ -241,32 +301,35 @@ const Dashboard = () => {
       <div className="rentalsContent">
         <div className="rentalsContent-box">
           <h3 className="title">Your properties</h3>
-          
+
           <div className="proplist">
-          {propertiesList.length !== 0 ? (
-            propertiesList.map((e, i) => {
-              return (
-                <>
-                  <div className="rental-div" key={i}>
-                    <img className="rental-img" src={e.imgUrl}></img>
-                    <div className="rental-info">
-                      <div className="rental-title">{e.name}</div>
-                      <div className="rental-desc">in {e.city}</div>
-                      <div className="rental-desc">{e.description}</div>
-                      <br />
-                      <br />
-                      <div className="price">{e.price}$/day</div>
+            {propertiesList.length !== 0 ? (
+              propertiesList.map((e, i) => {
+                return (
+                  <>
+                    <div className="rental-div" key={i}>
+                      <img className="rental-img" src={e.imgUrl}></img>
+                      <div className="rental-info">
+                        <div className="rental-title">{e.name}</div>
+                        <div className="rental-desc">in {e.city}</div>
+                        <div className="rental-desc">{e.description}</div>
+                        <br />
+                        <br />
+                        <div className="price">{e.price}$/day</div>
+                        <br />
+                        <Button variant="contained" sx={{ fontSize: '10px', padding: '3px 10px' }} onClick={() => handleOpen1(e.id)}>Reviews</Button>
+                        <Button variant="contained" sx={{ fontSize: '10px', padding: '3px 10px' }} style={{ marginLeft: "20px" }} onClick={() => handleOpenBooking(e.id)}>Bookings</Button>
+                      </div>
                     </div>
-                  </div>
-                   <hr className="line2" /> 
-                </>
-              );
-            })
-          ) : (
-            <div style={{ textAlign: "center", paddingTop: "50px" }}>
-              <p>You have no properties listed</p>
-            </div>
-          )}
+                    <hr className="line2" />
+                  </>
+                );
+              })
+            ) : (
+              <div style={{ textAlign: "center", paddingTop: "50px" }}>
+                <p>You have no properties listed</p>
+              </div>
+            )}
           </div>
         </div>
         <div className="rentalsContent-box">
@@ -279,48 +342,57 @@ const Dashboard = () => {
               handleReviewChange={handleReviewChange}
               newReview={newReview}
               loading1={loading1}
+              addview={addview}
               open={openModal}
             />) : ''
           }
+          {openBookingsModal ?
+            (<BookingsModal
+              bookings={bookings}
+              handleCloseBooking={handleCloseBooking}
+              open={openBookingsModal}
+            />) : ''
+          }
           <h3 className="title">Your rentals</h3>
-          
+
           <div className="proplist">
-          {rentalsList.length !== 0 ? (
-            rentalsList.map((e, i) => {
-              return (
-                <>
-                  <div className="rental-div" key={i}>
-                    <img className="rental-img" src={e.imgUrl}></img>
-                    <div className="rental-info">
-                      <div className="rental-title">{e.name}</div>
-                      <div className="rental-desc">in {e.city}</div>
-                      <div className="rental-desc">
-                        Booked dates:
-                        {` ${e.startDate.toLocaleString("default", {
-                          month: "short",
-                        })} ${e.startDate.toLocaleString("default", {
-                          day: "2-digit",
-                        })}  -  ${e.endDate.toLocaleString("default", {
-                          month: "short",
-                        })}  ${e.endDate.toLocaleString("default", {
-                          day: "2-digit",
-                        })} `}
+            {rentalsList.length !== 0 ? (
+              rentalsList.map((e, i) => {
+                return (
+                  <>
+                    <div className="rental-div" key={i}>
+                      <img className="rental-img" src={e.imgUrl}></img>
+                      <div className="rental-info">
+                        <div className="rental-title">{e.name}</div>
+                        <div className="rental-desc">in {e.city}</div>
+                        <div className="rental-desc">
+                          Booked dates:
+                          {` ${e.startDate.toLocaleString("default", {
+                            month: "short",
+                          })} ${e.startDate.toLocaleString("default", {
+                            day: "2-digit",
+                          })}  -  ${e.endDate.toLocaleString("default", {
+                            month: "short",
+                          })}  ${e.endDate.toLocaleString("default", {
+                            day: "2-digit",
+                          })} `}
+                        </div>
+                        <br />
+                        <br />
+                        <div className="price">{e.price}$/day</div>
+                        <br />
+                        <Button variant="contained" sx={{ fontSize: '10px', padding: '3px 10px' }} style={{ marginLeft: "160px" }}onClick={() => handleOpen(e.id)}>Reviews</Button>
                       </div>
-                      <br />
-                      <br />
-                      <div className="price">{e.price}$/day</div>
-                      <Button variant="contained" sx={{ fontSize: '10px', padding: '3px 10px' }} onClick={() => handleOpen(e.id)}>Reviews</Button>
                     </div>
-                  </div>
-                  <hr className="line2" /> 
-                </>
-              );
-            })
-          ) : (
-            <div style={{ textAlign: "center", paddingTop: "45px" }}>
-              <p>You have no reservation yet</p>
-            </div>
-          )}
+                    <hr className="line2" />
+                  </>
+                );
+              })
+            ) : (
+              <div style={{ textAlign: "center", paddingTop: "45px" }}>
+                <p>You have no reservation yet</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

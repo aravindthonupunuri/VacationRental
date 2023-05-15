@@ -3,7 +3,7 @@ import { Modal, Typography, Box, Divider, Button, Rating, TextField, CircularPro
 
 
 export default function ExampleModal(props) {
-  const { reviews, handleClose, handleAddReview, handleRatingChange, handleReviewChange, newReview, loading1, open } = props;
+  const { reviews, handleClose, handleAddReview, handleRatingChange, handleReviewChange, newReview, loading1, addview, open } = props;
 
 
   return (
@@ -51,6 +51,8 @@ export default function ExampleModal(props) {
             </Box>
           ))}
         </Box>
+        {addview ? (
+          <>
         <Typography variant="h5" gutterBottom>
           Add a review
         </Typography>
@@ -76,6 +78,8 @@ export default function ExampleModal(props) {
             )}
           </Button>
         </Box>
+        </>
+          ) : ""};
       </Box>
     </Modal>
   );
